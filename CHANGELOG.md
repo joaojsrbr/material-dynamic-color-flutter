@@ -1,3 +1,9 @@
+## 1.5.5
+
+- add suport and parameter highContrast to DynamicColorBuilder
+- add parameter enableDebugPrint to DynamicColorBuilder
+- add Exception DynamicColorException to DynamicColorBuilder
+
 ## 1.5.4
 
 - Update constraint for Flutter SDK

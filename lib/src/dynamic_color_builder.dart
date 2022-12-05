@@ -1,3 +1,4 @@
+import 'package:dynamic_color/src/dynamic_color_exception.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_color_utilities/material_color_utilities.dart';
@@ -24,18 +25,23 @@ import 'dynamic_color_plugin.dart';
 ///    [ColorScheme] directly, asynchronously.
 class DynamicColorBuilder extends StatefulWidget {
   const DynamicColorBuilder({
-    Key? key,
+    super.key,
     required this.builder,
-  }) : super(key: key);
+    this.enableDebugPrint = false,
+    this.highContrast = false,
+  });
+
+  // Enable debugPrint
+  final bool enableDebugPrint;
+
+  // Enable ColorScheme.highContrastLight
+  final bool highContrast;
 
   /// Builds the child widget of this widget, providing a light and dark [ColorScheme].
   ///
   /// The [ColorScheme]s will be null if dynamic color is not supported on the
   /// platform, or if the OS has yet to respond.
-  final Widget Function(
-    ColorScheme? lightDynamic,
-    ColorScheme? darkDynamic,
-  ) builder;
+  final Widget Function(ColorScheme? lightDynamic, ColorScheme? darkDynamic) builder;
 
   @override
   DynamicColorBuilderState createState() => DynamicColorBuilderState();
@@ -44,6 +50,20 @@ class DynamicColorBuilder extends StatefulWidget {
 class DynamicColorBuilderState extends State<DynamicColorBuilder> {
   ColorScheme? _light;
   ColorScheme? _dark;
+
+  // get initialized variable without constructor
+  bool get enableDebugPrint => widget.enableDebugPrint;
+
+  // get initialized variable without constructor
+  bool get highContrast => widget.highContrast;
+
+  // If the widget was removed from the tree while the asynchronous platform
+  // message was in flight, we want to discard the reply rather than calling
+  // setState to update our non-existent appearance.
+  @override
+  void setState(VoidCallback fn) {
+    if (mounted) super.setState(fn);
+  }
 
   @override
   void initState() {
@@ -55,50 +75,37 @@ class DynamicColorBuilderState extends State<DynamicColorBuilder> {
   Future<void> initPlatformState() async {
     // Platform messages may fail, so we use a try/catch PlatformException.
     try {
-      CorePalette? corePalette = await DynamicColorPlugin.getCorePalette();
-
-      // If the widget was removed from the tree while the asynchronous platform
-      // message was in flight, we want to discard the reply rather than calling
-      // setState to update our non-existent appearance.
-      if (!mounted) return;
-
-      if (corePalette != null) {
-        debugPrint('dynamic_color: Core palette detected.');
-        setState(() {
-          _light = corePalette.toColorScheme();
-          _dark = corePalette.toColorScheme(brightness: Brightness.dark);
-        });
-        return;
-      }
+      await DynamicColorPlugin.getCorePalette().then(
+        (value) async {
+          final CorePalette? corePalette = value;
+          if (corePalette != null) {
+            if (enableDebugPrint) debugPrint('dynamic_color: Core palette detected.');
+            setState(() {
+              _light = corePalette.toColorScheme(highContrast: highContrast);
+              _dark = corePalette.toColorScheme(brightness: Brightness.dark, highContrast: highContrast);
+            });
+          } else {
+            final Color? accentColor = await DynamicColorPlugin.getAccentColor();
+            if (accentColor == null) throw DynamicColorException('dynamic_color: Failed to obtain accent color.');
+            if (enableDebugPrint) debugPrint('dynamic_color: Accent color detected.');
+            setState(() {
+              _light = ColorScheme.fromSeed(
+                seedColor: accentColor,
+                brightness: Brightness.light,
+              );
+              _dark = ColorScheme.fromSeed(
+                seedColor: accentColor,
+                brightness: Brightness.dark,
+              );
+            });
+          }
+        },
+      );
     } on PlatformException {
       debugPrint('dynamic_color: Failed to obtain core palette.');
+    } on DynamicColorException catch (_) {
+      debugPrint(_.cause);
     }
-
-    try {
-      final Color? accentColor = await DynamicColorPlugin.getAccentColor();
-
-      // Likewise above.
-      if (!mounted) return;
-
-      if (accentColor != null) {
-        debugPrint('dynamic_color: Accent color detected.');
-        setState(() {
-          _light = ColorScheme.fromSeed(
-            seedColor: accentColor,
-            brightness: Brightness.light,
-          );
-          _dark = ColorScheme.fromSeed(
-            seedColor: accentColor,
-            brightness: Brightness.dark,
-          );
-        });
-        return;
-      }
-    } on PlatformException {
-      debugPrint('dynamic_color: Failed to obtain accent color.');
-    }
-
-    debugPrint('dynamic_color: Dynamic color not detected on this device.');
   }
 
   @override

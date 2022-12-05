@@ -12,12 +12,12 @@ class SampleCorePalettes {
 ///
 /// Correspond to the [CorePalette]s in [SampleCorePalettes].
 class SampleColorSchemes {
-  static ColorScheme green(Brightness brightness) =>
-      SampleCorePalettes.green.toColorScheme(
+  static ColorScheme green(Brightness brightness) => SampleCorePalettes.green.toColorScheme(
         brightness: brightness,
+        highContrast: false,
       )!;
-  static ColorScheme orange(Brightness brightness) =>
-      SampleCorePalettes.orange.toColorScheme(
+  static ColorScheme orange(Brightness brightness) => SampleCorePalettes.orange.toColorScheme(
         brightness: brightness,
+        highContrast: false,
       )!;
 }
