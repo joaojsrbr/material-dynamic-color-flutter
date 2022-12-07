@@ -47,15 +47,15 @@ class DynamicColorBuilder extends StatefulWidget {
   DynamicColorBuilderState createState() => DynamicColorBuilderState();
 }
 
-class DynamicColorBuilderState extends State<DynamicColorBuilder> {
+class DynamicColorBuilderState extends State<DynamicColorBuilder> with WidgetsBindingObserver {
   ColorScheme? _light;
   ColorScheme? _dark;
 
   // get initialized variable without constructor
-  bool get enableDebugPrint => widget.enableDebugPrint;
+  bool get _enableDebugPrint => widget.enableDebugPrint;
 
   // get initialized variable without constructor
-  bool get highContrast => widget.highContrast;
+  bool get _highContrast => widget.highContrast;
 
   // If the widget was removed from the tree while the asynchronous platform
   // message was in flight, we want to discard the reply rather than calling
@@ -67,8 +67,33 @@ class DynamicColorBuilderState extends State<DynamicColorBuilder> {
 
   @override
   void initState() {
+    WidgetsBinding.instance.addObserver(this);
     super.initState();
     initPlatformState();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    switch (state) {
+      case AppLifecycleState.resumed:
+        initPlatformState();
+        break;
+      case AppLifecycleState.inactive:
+        break;
+      case AppLifecycleState.paused:
+        // loggerNoStack.i('${describeIdentity(this)} paused');
+        break;
+      case AppLifecycleState.detached:
+        // loggerNoStack.i('${describeIdentity(this)} detached');
+        break;
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   // Platform messages are asynchronous, so we initialize in an async method.
@@ -79,15 +104,15 @@ class DynamicColorBuilderState extends State<DynamicColorBuilder> {
         (value) async {
           final CorePalette? corePalette = value;
           if (corePalette != null) {
-            if (enableDebugPrint) debugPrint('dynamic_color: Core palette detected.');
+            if (_enableDebugPrint) debugPrint('dynamic_color: Core palette detected.');
             setState(() {
-              _light = corePalette.toColorScheme(highContrast: highContrast);
-              _dark = corePalette.toColorScheme(brightness: Brightness.dark, highContrast: highContrast);
+              _light = corePalette.toColorScheme(highContrast: _highContrast);
+              _dark = corePalette.toColorScheme(brightness: Brightness.dark, highContrast: _highContrast);
             });
           } else {
             final Color? accentColor = await DynamicColorPlugin.getAccentColor();
             if (accentColor == null) throw DynamicColorException('dynamic_color: Failed to obtain accent color.');
-            if (enableDebugPrint) debugPrint('dynamic_color: Accent color detected.');
+            if (_enableDebugPrint) debugPrint('dynamic_color: Accent color detected.');
             setState(() {
               _light = ColorScheme.fromSeed(
                 seedColor: accentColor,
