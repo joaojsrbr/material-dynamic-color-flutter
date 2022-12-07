@@ -47,7 +47,7 @@ class DynamicColorBuilder extends StatefulWidget {
   DynamicColorBuilderState createState() => DynamicColorBuilderState();
 }
 
-class DynamicColorBuilderState extends State<DynamicColorBuilder> with WidgetsBindingObserver {
+class DynamicColorBuilderState extends State<DynamicColorBuilder> {
   ColorScheme? _light;
   ColorScheme? _dark;
 
@@ -65,39 +65,21 @@ class DynamicColorBuilderState extends State<DynamicColorBuilder> with WidgetsBi
     if (mounted) super.setState(fn);
   }
 
-  @override
-  void initState() {
-    WidgetsBinding.instance.addObserver(this);
-    super.initState();
-    initPlatformState();
-  }
+  // @override
+  // void initState() {
+  //   super.initState();
+  //   initPlatformState();
+  // }
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    super.didChangeAppLifecycleState(state);
-    switch (state) {
-      case AppLifecycleState.resumed:
-        initPlatformState();
-        break;
-      case AppLifecycleState.inactive:
-        break;
-      case AppLifecycleState.paused:
-        // loggerNoStack.i('${describeIdentity(this)} paused');
-        break;
-      case AppLifecycleState.detached:
-        // loggerNoStack.i('${describeIdentity(this)} detached');
-        break;
-    }
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
+  void didChangeDependencies() async {
+    await initPlatformState();
+    super.didChangeDependencies();
   }
 
   // Platform messages are asynchronous, so we initialize in an async method.
   Future<void> initPlatformState() async {
+    if (!mounted) return;
     // Platform messages may fail, so we use a try/catch PlatformException.
     try {
       await DynamicColorPlugin.getCorePalette().then(
