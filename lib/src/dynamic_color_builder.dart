@@ -65,16 +65,10 @@ class DynamicColorBuilderState extends State<DynamicColorBuilder> {
     if (mounted) super.setState(fn);
   }
 
-  // @override
-  // void initState() {
-  //   super.initState();
-  //   initPlatformState();
-  // }
-
   @override
-  void didChangeDependencies() async {
-    await initPlatformState();
-    super.didChangeDependencies();
+  void initState() {
+    super.initState();
+    initPlatformState();
   }
 
   // Platform messages are asynchronous, so we initialize in an async method.
